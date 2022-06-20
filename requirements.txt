@@ -1,0 +1,19 @@
+# requirements
+more_itertools
+pandas~=1.1.5
+numpy
+tqdm==4.62.3
+pyyaml==5.4.1
+requests==2.26.0
+click~=8.0.4
+questionary~=1.10.0
+matplotlib~=3.5.1
+environs
+uvicorn~=0.17.5
+fastapi~=0.74.1
+starlette~=0.17.1
+setuptools~=58.0.4
+progressbar2==3.51.3
+pydantic~=1.9.0
+pymongo~=3.12.0
+python-dotenv~=0.20.0
