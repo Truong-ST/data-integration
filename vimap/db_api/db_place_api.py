@@ -36,4 +36,5 @@ def add_new_place():
 def get_all_place():
     pass
 
+
 init_db_place_from_csv("data/Hotels_Downtown.csv")
