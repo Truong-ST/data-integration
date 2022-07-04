@@ -39,6 +39,13 @@ class School(Place):
         self.postcode = postcode
         self.phase = phase
 
-
+    def school_info(self):
+        school = dict()
+        school["head_name"] = self.head_name
+        school["telephone"] = self.telephone
+        school["website"] = self.website
+        school["postcode"] = self.postcode
+        school["phase"] = self.phase
+        return school
 
 

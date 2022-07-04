@@ -39,7 +39,7 @@ services:
       POSTGRES_PASSWORD: airflow
       POSTGRES_DB: airflow
     volumes:
-      - postgres-db-volume:/var/lib/postgresql/data
+      - postgres-db-volume:/var/lib/postgresql/data_matcher
     healthcheck:
       test: ["CMD", "pg_isready", "-U", "airflow"]
       interval: 5s

@@ -33,6 +33,20 @@ class Place:
         if self.longitude is None or self.latitude is None:
             self._update_bng(self.easting, self.northing)
 
+    def place_info(self):
+        place = dict()
+        place["id"] = self.id
+        place["longitude"] = self.longitude
+        place["latitude"] = self.latitude
+        place["easting"] = self.easting
+        place["northing"] = self.northing
+        place["address"] = self.address
+        place["name"] = self.name
+        place["description"] = self.description
+        place["place_type"] = self.place_type
+        place["metadata"] = self.metadata
+        return place
+
     @classmethod
     def from_dict(cls, data, **kwargs):
         return cls(**data, **kwargs)

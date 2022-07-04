@@ -5,7 +5,7 @@ from pymongo import MongoClient
 from pymongo.errors import CollectionInvalid
 from pymongo.errors import ServerSelectionTimeoutError
 from collections import OrderedDict
-from vimap.constrains import MONGO_URI, MONGO_DB
+from vimap.db_api.constrains import MONGO_URI, MONGO_DB
 
 
 class MongoConnector:

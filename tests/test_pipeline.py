@@ -1,7 +1,7 @@
-from vimap.extract.csv_extractor import CSVEtractor
+from vimap.extract.csv_extractor import CSVExtractor
 
 
-extractor = CSVEtractor()
+extractor = CSVExtractor()
 
 
 
@@ -12,8 +12,8 @@ extractor = CSVEtractor()
 ## Run
 
 file_paths = [
-    "data/schools-list.csv",
-    "data/09-05-2022busstop-list.csv"
+    "data_matcher/schools-list.csv",
+    "data_matcher/09-05-2022busstop-list.csv"
 ]
 
 datasets = extractor._load_csv(file_paths)
