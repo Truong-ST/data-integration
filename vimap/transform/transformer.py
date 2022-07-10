@@ -8,7 +8,7 @@ from vimap.transform.data_matcher import *
 from vimap.transform.schema_mapper import *
 from vimap.transform.schema_matcher import *
 from vimap.transform.schema_matcher.schema_matcher import SchemaMatcher
-
+import numpy as np
 from vimap.db_api import *
 from vimap.schema import *
 
@@ -50,6 +50,25 @@ class Transformer:
             sample = class_schema.from_dict(sample_dict)
             samples.append(sample)
         return samples
+
+    def matchingLocation(self, dataFrame):
+        tmp = np.where(np.array(dataFrame.columns) == 'Longitude')[0]
+        if tmp.size == 0:
+            return dataFrame
+        tmp = np.where(np.array(dataFrame.columns) == 'Latitude')[0]
+        if tmp.size == 0:
+            return dataFrame
+
+        dictLocation = {}
+        df = pd.DataFrame()
+        listDict = []
+        for _, row in dataFrame.iterrows():
+            row_dict = row.to_dict()
+            if (row_dict['Longitude'], row_dict['Latitude']) not in dictLocation.keys():
+                dictLocation[(row_dict['Longitude'], row_dict['Latitude'])] = 1
+                listDict.append(row_dict)
+        df = df.append(listDict, ignore_index=True, sort=False)
+        return df
 
     def fit(self, **kwargs):
         self.schema_matcher.fit()
