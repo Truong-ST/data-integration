@@ -7,6 +7,9 @@ import statistics
 from statistics import mode
 import pandas as pd
 from pandas import DataFrame
+import numpy as np
+import pandas as pd
+import Levenshtein as Lv
 
 from vimap.transform.schema_matcher.schema_matcher_base import SchemaMatcherBase
 from vimap.utils.string_utils import *
@@ -23,18 +26,28 @@ class SchemaMatcher(SchemaMatcherBase):
             schemas: Dict[Text, DataFrame] = None,
             col_name_score_thresh: float = 0.9,
             col_value_score_thresh: float = 0.6,
-            flexmatcher_sample_size: int = 5,
+            col_value_leven_thresh: float = 0.7,
+            flexmatcher_sample_size: int = 100,
             matched_by_names_schema: list = [],
             string_mapper=None,
             validater=None,
+            use_flexmatcher=False,
             **kwargs
     ):
         super(SchemaMatcher, self).__init__(**kwargs)
         self.col_name_score_thresh = col_name_score_thresh
         self.col_value_score_thresh = col_value_score_thresh
-        self.schemas = schemas or self._load_schema_samples()
+        self.col_value_leven_thresh = col_value_leven_thresh
+        self.schemas = schemas if schemas else {}
+
         self.matched_by_names_schema = matched_by_names_schema
-        self.flexmatcher = self._create_flexmatcher(flexmatcher_sample_size)
+
+        self.use_flexmatcher = use_flexmatcher
+        if self.use_flexmatcher:
+            self.flexmatcher = self._create_flexmatcher(flexmatcher_sample_size)
+        else:
+            self.flexmatcher = None
+
         self.flexmatcher_sample_size = flexmatcher_sample_size
         self.string_mapper = string_mapper
         self.validater = validater or Validater()
@@ -72,7 +85,7 @@ class SchemaMatcher(SchemaMatcherBase):
         fm = flexmatcher.FlexMatcher(schema_list, mapping_list, sample_size=sample_size)
         return fm
 
-    def _load_schema_samples(self, limit=100):
+    def _load_schema_samples(self, limit=None):
         schemas = {}
         for coll_name, collector in collectors.items():
             samples = collector.get(limit=limit)
@@ -105,8 +118,13 @@ class SchemaMatcher(SchemaMatcherBase):
                     col1 = str(ex_col).lower()
                     col2 = str(col).lower()
                     scores[f"{schema_name}/{col}"] = self._get_score_of_col_name(col1, col2)
-
             scores = sorted(scores.items(), key=lambda item: item[1], reverse=True)
+
+            if not scores:
+                outputs[ex_col] = None
+                continue
+
+            # print(f"{ex_col} ________ {scores}")
             top_1_score = scores[0][1]
             if top_1_score >= self.col_name_score_thresh:
                 outputs[ex_col] = {"schema": scores[0][0], "score": top_1_score}
@@ -114,7 +132,35 @@ class SchemaMatcher(SchemaMatcherBase):
                 outputs[ex_col] = None
         return outputs
 
-    def _get_score_of_col_value(self, values_col1, values_cl2):
+    @staticmethod
+    def __get_set_combinations(
+            set1: set,
+            set2: set,
+            threshold: float):
+        for s1 in set1:
+            yield str(s1), set2, threshold
+
+    @staticmethod
+    def __process_lv(tup: tuple):
+        """
+        Function that check if there exist entry from the second set that has a greater Levenshtein ratio with the
+        element from the first set than the given threshold
+        Parameters
+        ----------
+        tup : tuple
+            A tuple containing one element from the first set, the second set and the threshold of the Levenshtein ratio
+        Returns
+        -------
+        int
+            1 if there is such an element 0 if not
+        """
+        s1, set2, threshold = tup
+        for s2 in set2:
+            if Lv.ratio(s1, str(s2)) >= threshold:
+                return 1
+        return 0
+
+    def _get_score_of_col_value(self, values_col1, values_cl2, threshold=0.85):
         col1_types = [type(x) for x in values_col1]
         col2_types = [type(x) for x in values_cl2]
 
@@ -122,10 +168,26 @@ class SchemaMatcher(SchemaMatcherBase):
             return 0.0
         values_col1 = set(values_col1)
         values_cl2 = set(values_cl2)
-        intersection_size = len(values_cl2.intersection(values_col1))
-        union_size = len(values_cl2.union(values_col1))
-        jaccard_score = intersection_size / union_size
-        return jaccard_score
+
+        if len(set(values_col1)) < len(set(values_cl2)):
+            set1 = set(values_col1)
+            set2 = set(values_cl2)
+        else:
+            set1 = set(values_cl2)
+            set2 = set(values_col1)
+
+        combinations = self.__get_set_combinations(set1, set2, threshold)
+        intersection_cnt = 0
+        for cmb in combinations:
+            intersection_cnt = intersection_cnt + self.__process_lv(cmb)
+
+        union_cnt = len(set1) + len(set2) - intersection_cnt
+        if union_cnt == 0:
+            sim = 0.0
+        else:
+            sim = float(intersection_cnt) / union_cnt
+
+        return sim
 
     def matcher_col_value(self, external_df: DataFrame):
         outputs = {}
@@ -135,8 +197,12 @@ class SchemaMatcher(SchemaMatcherBase):
             for schema_name, df in self.schemas.items():
                 for col in df.columns:
                     value_col2 = list(df[col])
-                    scores[f"{schema_name}/{col}"] = self._get_score_of_col_value(value_col1, value_col2)
+                    scores[f"{schema_name}/{col}"] = self._get_score_of_col_value(value_col1, value_col2,
+                                                                                  threshold=self.col_value_leven_thresh)
             scores = sorted(scores.items(), key=lambda item: item[1], reverse=True)
+            if not scores:
+                outputs[ex_col] = None
+                continue
             top_1_score = scores[0][1]
             if top_1_score >= self.col_value_score_thresh:
                 outputs[ex_col] = {"schema": scores[0][0], "score": top_1_score}
@@ -156,18 +222,28 @@ class SchemaMatcher(SchemaMatcherBase):
 
         # save flexmatcher
         flexmatcher_model_path = os.path.join(matcher_dir, self.flexmatcher.__class__.__name__ + ".bin")
-        self.flexmatcher.save_model(flexmatcher_model_path)
+        if self.flexmatcher is not None:
+            self.flexmatcher.save_model(flexmatcher_model_path)
 
         # save config
         config_path = os.path.join(matcher_dir, "config.json")
         write_json(config, config_path)
+
+        # save schema
+        sample_schema_path = os.path.join(matcher_dir, "sample_schema")
+        if os.path.exists(sample_schema_path) is False:
+            os.makedirs(sample_schema_path)
+        for name, df in self.schemas.items():
+            df_path = os.path.join(sample_schema_path, f'{name}.csv')
+            df.to_csv(df_path, index=False)
 
     def load(self, dir_path, **kwargs):
         matcher_dir = os.path.join(dir_path, self.__class__.__name__)
 
         # load flexmatcher
         flexmatcher_model_path = os.path.join(matcher_dir, self.flexmatcher.__class__.__name__ + ".bin")
-        self.flexmatcher.load_model(flexmatcher_model_path)
+        if os.path.exists(flexmatcher_model_path) and self.flexmatcher is not None:
+            self.flexmatcher.load_model(flexmatcher_model_path)
 
         # load config
         config_path = os.path.join(matcher_dir, "config.json")
@@ -175,9 +251,21 @@ class SchemaMatcher(SchemaMatcherBase):
         for key, value in config.items():
             setattr(self, key, value)
 
+        # load schema
+        sample_schema_path = os.path.join(matcher_dir, "sample_schema")
+        if os.path.exists(sample_schema_path):
+            file_names = os.listdir(sample_schema_path)
+            for file_name in file_names:
+                df_path = os.path.join(sample_schema_path, file_name)
+                if file_name.endswith(".csv"):
+                    self.schemas[file_name.strip('.csv')] = pd.read_csv(df_path)
+
+        if not self.schemas:
+            self.schemas = self._load_schema_samples()
+
     def fit(self, **kwargs):
-        self.flexmatcher = self._create_flexmatcher(self.flexmatcher_sample_size)
-        self.flexmatcher.train()
+        if self.flexmatcher and self.use_flexmatcher:
+            self.flexmatcher.train()
 
     def _validate(self, matcher_output, df=None):
         _validated_output = {}
@@ -188,8 +276,9 @@ class SchemaMatcher(SchemaMatcherBase):
         return _validated_output
 
     def transform(self, external_df: DataFrame, **kwargs):
-        # matcher by col name
         by_col_name_output = self.matcher_col_name(external_df)
+        print(f">> Schema matching by column name: {by_col_name_output}")
+
         final_output = {}
         for col, schema in by_col_name_output.items():
             if schema:
@@ -202,6 +291,8 @@ class SchemaMatcher(SchemaMatcherBase):
         external_df = external_df.drop(matched_dop_cols, axis=1)
 
         by_col_value_output = self.matcher_col_value(external_df)
+        print(f">> Schema matching by column value: {by_col_value_output}")
+
         for col, schema in by_col_value_output.items():
             if schema:
                 final_output[col] = schema["schema"]
@@ -211,30 +302,42 @@ class SchemaMatcher(SchemaMatcherBase):
         for col in external_df.columns:
             if external_df.dtypes[col] == np.int64 or external_df.dtypes[col] == np.float64:
                 non_text_cols.append(col)
+
         external_df = external_df.drop(non_text_cols, axis=1)
-        flex_output = self.flexmatcher.make_prediction(external_df)
-        flex_output = self._validate(flex_output, df=external_df)
+        if self.use_flexmatcher and self.flexmatcher:
+            flex_output = self.flexmatcher.make_prediction(external_df)
+            print(f">> Schema matching by flexmatcher: {flex_output}")
+        else:
+            flex_output = {}
+
         final_output.update(flex_output)
+        final_output = self._validate(final_output, df=external_df)
         return final_output
 
-#
-# external_df = pd.read_csv("data/raw/translink-stationsni.csv")
-#
-# matched_col_name_schema = [
-#     "Place/easting",
-#     "Place/northing",
-#     "Place/longitude"
-#     "Place/latitude"
-# ]
-# matcher = SchemaMatcher(
-#     matched_by_names_schema=matched_col_name_schema
-# )
-#
-# # output = matcher.matcher_col_name(external_df)
-# # output = matcher.matcher_col_value(external_df)
-#
-# matcher.fit()
-# # matcher.load("models/schema_matcher")
-# # matcher.save("models/schema_matcher")
-# output = matcher.transform(external_df)
-# print(output)
+
+external_df = pd.read_csv("data/raw/translink-stationsni.csv")
+
+matched_col_name_schema = [
+    "Place/easting",
+    "Place/northing",
+    "Place/longitude"
+    "Place/latitude"
+]
+
+string_mapper = StringMapper()
+string_mapper.load("configs/col_name_mappings.json")
+
+matcher = SchemaMatcher(
+    matched_by_names_schema=matched_col_name_schema,
+    string_mapper=string_mapper,
+    use_flexmatcher=False
+)
+
+# output = matcher.matcher_col_name(external_df)
+# output = matcher.matcher_col_value(external_df)
+
+matcher.fit()
+matcher.load("models/schema_matcher")
+matcher.save("models/schema_matcher")
+output = matcher.transform(external_df)
+print(output)

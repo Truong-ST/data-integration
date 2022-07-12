@@ -44,8 +44,8 @@ class Validater:
         try:
             func_validate = getattr(self, f'_validate_{col2}')
         except:
-            print(col1)
-            return False
+            print(f">> Not have validate function on {col2}")
+            return True
         if func_validate:
             return func_validate(col1, col2, df)
 
