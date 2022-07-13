@@ -1,1 +1,2 @@
 from vimap.transform.data_matcher.data_matcher_base import DataMatcherBase
+from vimap.transform.data_matcher.data_matcher import DataMatcher

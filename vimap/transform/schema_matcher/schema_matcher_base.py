@@ -2,7 +2,7 @@ class SchemaMatcherBase:
     def __init__(self, **kwargs):
         pass
 
-    def transform(self, **kwargs):
+    def transform(self, samples, **kwargs):
         pass
 
     def fit(self, **kwargs):

@@ -59,6 +59,7 @@ class PlaceCollector:
 
     def add_new_place(self, place: Place):
         if not self.check_place_is_exist(place):
+            print(f"DB: >> Insert {place.place_info()}")
             self.place_coll.insert_one(place.place_info())
 
     def get_all_place(self, limit: int = None):
@@ -69,10 +70,12 @@ class PlaceCollector:
         samples = list(samples)
         return samples
 
-    def get(self, limit: int = None):
-        if limit:
-            samples = self.place_coll.find().limit(limit=limit)
+    def get(self, limit: int = None, _filter: Dict = None):
+        if _filter is None:
+            _filter = {}
+        if limit is not None:
+            samples = self.place_coll.find(_filter).limit(limit=limit)
         else:
-            samples = self.place_coll.find()
+            samples = self.place_coll.find(_filter)
         samples = list(samples)
         return samples

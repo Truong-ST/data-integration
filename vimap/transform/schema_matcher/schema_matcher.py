@@ -55,6 +55,9 @@ class SchemaMatcher(SchemaMatcherBase):
             self.string_mapper = StringMapper()
             self.string_mapper.load("configs/col_name_mappings.json")
 
+    def load_schema_sample(self):
+        pass
+
     def _process_df(self, df):
         df = df.dropna(how='all', axis=1)
         df = df.replace(r'^\s*$', np.nan, regex=True).dropna(axis=0)
@@ -336,8 +339,8 @@ matcher = SchemaMatcher(
 # output = matcher.matcher_col_name(external_df)
 # output = matcher.matcher_col_value(external_df)
 
-matcher.fit()
-matcher.load("models/schema_matcher")
-matcher.save("models/schema_matcher")
-output = matcher.transform(external_df)
-print(output)
+# matcher.fit()
+# matcher.load("models/schema_matcher")
+# matcher.save("models/schema_matcher")
+# output = matcher.transform(external_df)
+# print(output)

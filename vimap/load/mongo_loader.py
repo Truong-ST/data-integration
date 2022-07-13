@@ -1,21 +1,23 @@
 import pymongo
 import csv 
+from vimap.db_api import collectors
+from vimap.db_api.constrains import *
 
 
-    
-    
-class Loader():
-    def __init__(self, db):
-        self.db = db
-    
-    
-    def load_mongo(collection, insert_dict):
-        """"""
-        try:
-            collection.insert_one(insert_dict)
-        except:
-            raise Exception(f"Fail load to mongo") 
-            
+class MongoLoader:
+    def __init__(self):
+        pass
+
+    def _update(self):
+        pass
+
+    def load_mongo(self, mapped_data, **kwargs):
+        print("-" * 40 + "LOADING" + "-" * 40)
+        for sample, matched_id in mapped_data:
+            if matched_id is None:
+                collectors[PLACE_COLLECTION].add_new_place(sample)
+        print("Done!")
+
 
 if __name__ == '__main__':
     myclient = pymongo.MongoClient("mongodb+srv://truong:truong@cluster0.plolo.mongodb.net/test")

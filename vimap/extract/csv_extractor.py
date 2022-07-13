@@ -6,7 +6,7 @@ class CSVExtractor:
     def __init__(self):
         self.samples = []
 
-    def _load_csv(self, file_path):
+    def load_csv(self, file_path):
         try:
             df = pd.read_csv(file_path, encoding="ISO 8859-1")
             return df

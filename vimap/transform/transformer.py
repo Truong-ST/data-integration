@@ -19,19 +19,45 @@ class Transformer:
     def __init__(
             self,
             schema_matcher: SchemaMatcherBase = None,
-            data_matcher: SchemaMatcherBase = None,
-            data_mapper: DataMatcherBase = None,
+            data_matcher: DataMatcherBase = None,
+            data_mapper: DataMapperBase = None,
             **kwargs
     ):
-        self.schema_matcher = schema_matcher or SchemaMatcher()
-        self.data_matcher = data_matcher
-        self.data_mapper = data_mapper
+        self.schema_matcher = schema_matcher or SchemaMatcher(use_flexmatcher=False)
+        self.data_matcher = data_matcher or DataMatcher()
+        self.data_mapper = data_mapper or DataMapper()
         self.schema_list = []
 
-    def transform(self, df: pd.DataFrame, **kwargs):
-        matched_schema = self.schema_matcher.transform(df)
-        if not matched_schema:
-            return
+    def _check_keyword(self, text: Text, keywords: Union[Text, List]):
+        if isinstance(keywords, Text):
+            keywords = [keywords]
+
+        for word in keywords:
+            if word.lower() in text.lower():
+                return True
+        return False
+
+    def _get_place_type_from_name(self, name):
+        keywords = {
+            "Station": ["rail", "station"],
+            "School": ["School", "Academy"]
+        }
+        for place_type, words in keywords.items():
+            if self._check_keyword(name, words):
+                return place_type
+
+        return None
+
+    def process_samples(self, samples: Union[Place, List]):
+        if isinstance(samples, Place):
+            samples = [samples]
+
+        for sample in samples:
+            place_type = self._get_place_type_from_name(sample.name)
+            sample.place_type = place_type
+        return samples
+
+    def get_sample_place_by_schema_matched(self, df, matched_schema):
         schema = "Place"
         for schema_value in matched_schema.values():
             _schema = schema_value.split("/")[0]
@@ -51,6 +77,24 @@ class Transformer:
             samples.append(sample)
         return samples
 
+    def transform(self, df: pd.DataFrame, **kwargs):
+        print("-"*40 + "SCHEMA MATCHING" + "-"*40)
+        matched_schema = self.schema_matcher.transform(df)
+        if not matched_schema:
+            print(">> Schema not matched............")
+            return
+        print(">> Done!")
+        print("-"*40 + "PROCESS DATA" + "-"*40)
+        samples = self.get_sample_place_by_schema_matched(df, matched_schema)
+        samples = self.process_samples(samples)
+        print(">> Done!")
+        print("-"*40 + "DATA MATCHING" + "-"*40)
+        matched_data = self.data_matcher.transform(samples)
+        print(">> Done!")
+        print("-" * 40 + "DATA MAPPING" + "-" * 40)
+        matched_data = self.data_mapper.transform(matched_data)
+        return matched_data
+
     def matchingLocation(self, dataFrame):
         tmp = np.where(np.array(dataFrame.columns) == 'Longitude')[0]
         if tmp.size == 0:
@@ -58,7 +102,6 @@ class Transformer:
         tmp = np.where(np.array(dataFrame.columns) == 'Latitude')[0]
         if tmp.size == 0:
             return dataFrame
-
         dictLocation = {}
         df = pd.DataFrame()
         listDict = []

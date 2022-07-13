@@ -33,6 +33,9 @@ class Place:
         if self.longitude is None or self.latitude is None:
             self._update_bng(self.easting, self.northing)
 
+    def to_dict(self):
+        return self.place_info()
+
     def place_info(self):
         place = dict()
         place["id"] = self.id

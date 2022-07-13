@@ -3,8 +3,8 @@ class DataMapperBase:
     def __init__(self):
         pass
 
-    def transform(self, **kwargs):
-        pass
+    def transform(self, matched_data, **kwargs):
+        return matched_data
 
     def fit(self, **kwargs):
         pass

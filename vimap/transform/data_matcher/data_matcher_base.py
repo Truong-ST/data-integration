@@ -2,7 +2,7 @@ class DataMatcherBase:
     def __init__(self):
         pass
 
-    def transform(self, **kwargs):
+    def transform(self, samples, **kwargs):
         pass
 
     def fit(self, **kwargs):
