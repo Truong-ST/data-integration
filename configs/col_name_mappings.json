@@ -1,11 +1,12 @@
 {
-  "longitude": ["longitude"],
-  "latitude": ["latitude"],
+  "longitude": ["longitude", "X"],
+  "latitude": ["latitude", "Y"],
   "easting": ["easting"],
   "northing": ["northing"],
   "address": ["address"],
   "name": ["name", "Establishment", "STATION", "CommonName", "HotelName"],
   "telephone": ["telephone", "phone number"],
   "website": ["website"],
-  "postcode": ["postcode"]
+  "postcode": ["postcode"],
+  "stop_type": ["StopType"]
 }
