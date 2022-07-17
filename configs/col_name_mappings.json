@@ -1,12 +1,14 @@
 {
-  "longitude": ["longitude", "X"],
-  "latitude": ["latitude", "Y"],
-  "easting": ["easting"],
-  "northing": ["northing"],
+  "longitude": ["longitude"],
+  "latitude": ["latitude"],
+  "easting": ["easting", "X"],
+  "northing": ["northing", "Y"],
   "address": ["address"],
   "name": ["name", "Establishment", "STATION", "CommonName", "HotelName"],
   "telephone": ["telephone", "phone number"],
   "website": ["website"],
   "postcode": ["postcode"],
-  "stop_type": ["StopType"]
+  "address": ["Address 1", "Address 2", "Address 3", "Address 4"],
+  "stop_type": ["StopType"],
+  "street": ["street"]
 }

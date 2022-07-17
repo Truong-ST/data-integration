@@ -13,7 +13,8 @@ from vimap.db_api import *
 
 if __name__ == '__main__':
     file_paths = [
-        # "data/raw/nir-rail-stations.csv",
+        "data/raw/09-05-2022busstop-list.csv",
+        "data/raw/TfGMStoppingPoints.csv",
         "data/raw/schools-list.csv"
     ]
     # create extractor
