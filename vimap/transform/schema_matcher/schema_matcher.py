@@ -318,23 +318,23 @@ class SchemaMatcher(SchemaMatcherBase):
         return final_output
 
 
-external_df = pd.read_csv("data/raw/translink-stationsni.csv")
-
-matched_col_name_schema = [
-    "Place/easting",
-    "Place/northing",
-    "Place/longitude"
-    "Place/latitude"
-]
-
-string_mapper = StringMapper()
-string_mapper.load("configs/col_name_mappings.json")
-
-matcher = SchemaMatcher(
-    matched_by_names_schema=matched_col_name_schema,
-    string_mapper=string_mapper,
-    use_flexmatcher=False
-)
+# external_df = pd.read_csv("data/raw/translink-stationsni.csv")
+#
+# matched_col_name_schema = [
+#     "Place/easting",
+#     "Place/northing",
+#     "Place/longitude"
+#     "Place/latitude"
+# ]
+#
+# string_mapper = StringMapper()
+# string_mapper.load("configs/col_name_mappings.json")
+#
+# matcher = SchemaMatcher(
+#     matched_by_names_schema=matched_col_name_schema,
+#     string_mapper=string_mapper,
+#     use_flexmatcher=False
+# )
 
 # output = matcher.matcher_col_name(external_df)
 # output = matcher.matcher_col_value(external_df)
