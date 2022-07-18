@@ -113,6 +113,9 @@ class SchemaMatcher(SchemaMatcherBase):
         for ex_col in external_df.columns:
             mapping_col, mapping_score = self.string_mapper.map(ex_col)
             if mapping_score >= self.col_name_score_thresh:
+                schema = schema_mapping_cols.get(mapping_col, None)
+                if schema is None:
+                    continue
                 outputs[ex_col] = {"schema": schema_mapping_cols[mapping_col], "score": mapping_score}
                 continue
             scores = {}

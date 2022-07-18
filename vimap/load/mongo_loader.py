@@ -19,19 +19,19 @@ class MongoLoader:
         print("Done!")
 
 
-if __name__ == '__main__':
-    myclient = pymongo.MongoClient("mongodb+srv://truong:truong@cluster0.plolo.mongodb.net/test")
-    mydb = myclient["open_one"]
-    mycol = mydb["places"]
-
-    file = open('./dataset/school-list.csv', 'r')
-    file_csv = csv.reader(file)
-    header = file_csv.__next__()
-    places_dict = ['id', 'latitude', 'longtitude', 'easting', 'northing', 'address', 'name', 'description', 'place_type', 'metadata']
-    school_dict = ['id', 'head_name', 'telephone', 'website', 'postcode', 'phase']
-    bust_stop_dict = ['id', 'stop_type', 'street', 'locality_name']
-
-    for row in file_csv:
-        insert_dict = dict(zip(places_dict, row))
-        dict = { "name": "John", "address": "Highway 37" }
-        x = mycol.insert_one(insert_dict)
+# if __name__ == '__main__':
+#     myclient = pymongo.MongoClient("mongodb+srv://truong:truong@cluster0.plolo.mongodb.net/test")
+#     mydb = myclient["open_one"]
+#     mycol = mydb["places"]
+#
+#     file = open('./dataset/school-list.csv', 'r')
+#     file_csv = csv.reader(file)
+#     header = file_csv.__next__()
+#     places_dict = ['id', 'latitude', 'longtitude', 'easting', 'northing', 'address', 'name', 'description', 'place_type', 'metadata']
+#     school_dict = ['id', 'head_name', 'telephone', 'website', 'postcode', 'phase']
+#     bust_stop_dict = ['id', 'stop_type', 'street', 'locality_name']
+#
+#     for row in file_csv:
+#         insert_dict = dict(zip(places_dict, row))
+#         dict = { "name": "John", "address": "Highway 37" }
+#         x = mycol.insert_one(insert_dict)

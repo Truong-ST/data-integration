@@ -14,4 +14,5 @@ schema_mapping_cols = {
     "telephone": "School/telephone",
     "website": "School/website",
     "postcode": "School/postcode",
+    "stop_type": "BusStop/stop_type"
 }
